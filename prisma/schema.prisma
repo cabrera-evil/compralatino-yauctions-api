@@ -1,0 +1,195 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Provider {
+  LOCAL
+  GOOGLE
+  GITHUB
+}
+
+enum ItemStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+  INACTIVE
+}
+
+enum ItemPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+model User {
+  id               Int       @id @default(autoincrement())
+  username         String    @unique @db.VarChar(50)
+  firstName        String?   @map("first_name") @db.VarChar(100)
+  lastName         String?   @map("last_name") @db.VarChar(100)
+  email            String    @unique @db.VarChar(255)
+  password         String    @db.VarChar(255)
+  provider         Provider  @default(LOCAL)
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  emailVerifiedAt  DateTime? @map("email_verified_at")
+  profileCompleted Boolean   @default(false) @map("profile_completed")
+  lastLoginAt      DateTime? @map("last_login_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  pictureId     Int?           @map("picture_id")
+  picture       File?          @relation(fields: [pictureId], references: [id])
+  resetPassword ResetPassword? @relation
+  auditLogs     AuditLog[]
+  apiKeys       ApiKey[]
+  roles         Role[]
+
+  @@index([firstName, lastName])
+  @@index([provider])
+  @@map("users")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  resource    String   @db.VarChar(50)
+  action      String   @db.VarChar(50)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  rolePermissions RolePermission[]
+
+  @@index([resource])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       Int @map("role_id")
+  permissionId Int @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model ResetPassword {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique @map("user_id")
+  token     String    @unique @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("reset_passwords")
+}
+
+model File {
+  id           Int       @id @default(autoincrement())
+  assetId      String    @unique @map("asset_id") @db.VarChar(255)
+  publicId     String    @unique @map("public_id") @db.VarChar(255)
+  format       String?   @db.VarChar(20)
+  version      Int
+  resourceType String?   @map("resource_type") @db.VarChar(50)
+  type         String?   @db.VarChar(50)
+  bytes        Int?
+  width        Int?
+  height       Int?
+  folder       String?   @db.VarChar(255)
+  accessMode   String?   @map("access_mode") @db.VarChar(50)
+  url          String    @db.Text
+  secureUrl    String    @map("secure_url") @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  User User[]
+
+  @@index([resourceType])
+  @@index([folder])
+  @@map("files")
+}
+
+model AuditLog {
+  id        Int         @id @default(autoincrement())
+  tableName String      @map("table_name") @db.VarChar(100)
+  recordId  Int         @map("record_id")
+  action    AuditAction
+  values    Json?
+  ipAddress String?     @map("ip_address") @db.VarChar(45)
+  userAgent String?     @map("user_agent") @db.Text
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  userId Int?  @map("user_id")
+  user   User? @relation(fields: [userId], references: [id])
+
+  @@index([tableName, recordId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+model ApiKey {
+  id         Int          @id @default(autoincrement())
+  key        String       @unique @db.VarChar(64)
+  name       String       @db.VarChar(100)
+  keyPrefix  String       @map("key_prefix") @db.VarChar(12)
+  status     ApiKeyStatus @default(ACTIVE)
+  expiresAt  DateTime?    @map("expires_at")
+  lastUsedAt DateTime?    @map("last_used_at")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("api_keys")
+}

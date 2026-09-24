@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Message Received - {{#if companyName}}{{companyName}}{{else}}Application{{/if}}</title>
+</head>
+<body style="margin: 0; padding: 32px 12px; background-color: #09090b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+		<tr><td align="center">
+			<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; background-color: #17171c; border: 1px solid #2a2a33; border-radius: 16px;">
+				{{> header title="Message Received!" subtitle="We'll be in touch soon" companyName=companyName}}
+				<tr><td style="padding: 36px 40px;">
+					<p style="margin: 0 0 20px; font-size: 18px; font-weight: 600; color: #f4f4f5;">Hello {{name}},</p>
+					<p style="margin: 0 0 28px; font-size: 15px; line-height: 1.7; color: #a1a1aa;">Thank you for contacting us! We've received your message and our support team has been notified. We'll respond as quickly as possible.</p>
+					<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; background-color: #1f1f26; border: 1px solid #2a2a33; border-radius: 10px; margin: 0 0 28px;"><tr><td style="padding: 8px 24px;">
+						<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+							<tr><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; width: 120px; font-size: 13px; font-weight: 600; color: #a1a1aa;">Name</td><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; color: #f4f4f5;">{{name}}</td></tr>
+							<tr><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; font-weight: 600; color: #a1a1aa;">Email</td><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; color: #f4f4f5;">{{email}}</td></tr>
+							<tr><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; font-weight: 600; color: #a1a1aa;">Subject</td><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; color: #f4f4f5;">{{subject}}</td></tr>
+							<tr><td style="padding: 14px 0; vertical-align: top; font-size: 13px; font-weight: 600; color: #a1a1aa;">Message</td><td style="padding: 14px 0; font-size: 13px; color: #f4f4f5;">{{message}}</td></tr>
+						</table>
+					</td></tr></table>
+					<p style="margin: 0; font-size: 13px; line-height: 1.7; color: #71717a;">Keep this email as your confirmation reference. Our team will review your message within 24 hours.</p>
+				</td></tr>
+				{{> footer companyName=companyName footerNote="This is an automated confirmation email."}}
+			</table>
+		</td></tr>
+	</table>
+</body>
+</html>

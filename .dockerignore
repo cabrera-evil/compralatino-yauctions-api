@@ -1,0 +1,46 @@
+# Node dependencies
+node_modules
+
+# Build output
+dist
+build
+
+# Environment files
+.env*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Coverage and test
+coverage
+test-results
+jest-cache
+.nyc_output
+**/*.spec.ts
+
+# Git & CI/CD
+.git
+.github
+.husky
+
+# Docker itself
+docker-compose.yml
+Dockerfile
+
+# Kubernetes / Helm
+k8senv.yaml
+values.yaml
+
+# Actions
+secrets.yaml
+
+# Local configs
+*.local
+*.dev
+*.bak
+*.tmp
+

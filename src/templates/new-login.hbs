@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>New Login Detected - {{#if companyName}}{{companyName}}{{else}}Application{{/if}}</title>
+</head>
+<body style="margin: 0; padding: 32px 12px; background-color: #09090b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+	<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+		<tr><td align="center">
+			<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px; background-color: #17171c; border: 1px solid #2a2a33; border-radius: 16px;">
+				{{> header title="New Login Detected" subtitle="Account access notification" companyName=companyName}}
+				<tr><td style="padding: 36px 40px;">
+					<p style="margin: 0 0 20px; font-size: 18px; font-weight: 600; color: #f4f4f5;">Hello {{name}},</p>
+					<p style="margin: 0 0 28px; font-size: 15px; line-height: 1.7; color: #a1a1aa;">We detected a new login to your account. If this was you, no action is needed. If you don't recognize this activity, secure your account immediately.</p>
+					<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; background-color: #1f1f26; border: 1px solid #2a2a33; border-radius: 10px; margin: 0 0 32px;"><tr><td style="padding: 8px 24px;">
+						<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse;">
+							<tr><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; width: 140px; font-size: 13px; font-weight: 600; color: #a1a1aa;">Date &amp; Time</td><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; color: #f4f4f5;">{{loginTime}}</td></tr>
+							<tr><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; font-weight: 600; color: #a1a1aa;">IP Address</td><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; color: #f4f4f5;">{{ipAddress}}</td></tr>
+							<tr><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; font-weight: 600; color: #a1a1aa;">Location</td><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; color: #f4f4f5;">{{location}}</td></tr>
+							<tr><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; font-weight: 600; color: #a1a1aa;">Device</td><td style="padding: 14px 0; border-bottom: 1px solid #2a2a33; font-size: 13px; color: #f4f4f5;">{{device}} &middot; {{browser}} &middot; {{operatingSystem}}</td></tr>
+							<tr><td style="padding: 14px 0; vertical-align: top; font-size: 13px; font-weight: 600; color: #a1a1aa;">User Agent</td><td style="padding: 14px 0; font-size: 12px; color: #71717a; word-break: break-all;">{{userAgent}}</td></tr>
+						</table>
+					</td></tr></table>
+					<p style="margin: 0 0 16px; font-size: 14px; font-weight: 600; color: #f4f4f5; text-align: center;">Was this login unauthorized?</p>
+					<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin: 0 0 32px;"><tr><td align="center" style="padding: 0 6px 12px 0;">{{> button href=secureAccountLink label="Secure My Account"}}</td><td align="center" style="padding: 0 0 12px 6px;">{{> button href=changePasswordLink label="Change Password"}}</td></tr></table>
+					<p style="margin: 0; font-size: 13px; line-height: 1.7; color: #71717a; text-align: center;">You can view and manage active sessions from your <a href="{{manageSessionsLink}}" style="color: #8b5cf6; text-decoration: underline;">account dashboard</a>.</p>
+				</td></tr>
+				{{> footer companyName=companyName footerNote="This is an automated security notification. Please do not reply."}}
+			</table>
+		</td></tr>
+	</table>
+</body>
+</html>
