@@ -1,6 +1,6 @@
 # Use specific Node.js version for consistency
 ARG NODE_VERSION=jod
-ARG PNPM_VERSION=latest
+ARG PNPM_VERSION=11.9.0
 
 # ==============================================================================
 # Base stage - Common dependencies and user setup
