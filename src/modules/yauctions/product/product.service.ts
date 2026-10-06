@@ -6,6 +6,7 @@ import {
 	ListProductsQueryDto,
 	ProductSortKey,
 } from './dto/list-products-query.dto';
+import { openLotWhere } from './open-lot.where';
 import {
 	lotWithCategory,
 	serializeCatalogItem,
@@ -28,7 +29,7 @@ export class ProductService {
 	async findAll(query: ListProductsQueryDto) {
 		const { categories, minPrice, maxPrice, sort, page, pageSize } = query;
 		const where: Prisma.YacLotWhereInput = {
-			status: 'open',
+			...openLotWhere(),
 			AND: toSearchTerms(query.q ?? '').map((term) => ({
 				searchText: { contains: term },
 			})),
@@ -59,7 +60,7 @@ export class ProductService {
 
 	async findOne(code: string) {
 		const lot = await this.prisma.yacLot.findFirst({
-			where: { code, status: 'open' },
+			where: { code, ...openLotWhere() },
 			...lotWithCategory,
 		});
 		if (!lot) throw new NotFoundException('Product not found');

@@ -1,6 +1,7 @@
 import { singleResponse } from '@/utils/response.util';
 import { Injectable } from '@nestjs/common';
 import { PrismaClient } from 'prisma/generated/client';
+import { openLotWhere } from '../product/open-lot.where';
 
 @Injectable()
 export class CategoryService {
@@ -12,7 +13,7 @@ export class CategoryService {
 			select: {
 				code: true,
 				label: true,
-				_count: { select: { lots: { where: { status: 'open' } } } },
+				_count: { select: { lots: { where: openLotWhere() } } },
 			},
 		});
 		return singleResponse(
