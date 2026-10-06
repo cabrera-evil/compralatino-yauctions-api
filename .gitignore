@@ -61,3 +61,6 @@ secrets.yaml
 
 # Prisma
 **/prisma/**/generated
+
+# Added by ggshield
+.cache_ggshield
