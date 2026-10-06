@@ -6,6 +6,7 @@ ARG PNPM_VERSION=11.9.0
 # Base stage - Common dependencies and user setup
 # ==============================================================================
 FROM node:${NODE_VERSION}-bookworm-slim AS base
+ARG PNPM_VERSION
 
 # Install essential system dependencies including OpenSSL for Prisma
 RUN apt-get update && \
