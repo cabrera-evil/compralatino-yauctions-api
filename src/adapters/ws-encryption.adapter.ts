@@ -4,7 +4,7 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 import { Server, ServerOptions, Socket } from 'socket.io';
 
 export class WsEncryptionAdapter extends IoAdapter {
-	private readonly logger = new Logger(WsEncryptionAdapter.name);
+	private readonly adapterLogger = new Logger(WsEncryptionAdapter.name);
 
 	constructor(
 		app: INestApplicationContext,
@@ -17,11 +17,11 @@ export class WsEncryptionAdapter extends IoAdapter {
 		const server = super.createIOServer(port, options);
 
 		if (!this.encryptionService.isEnabled()) {
-			this.logger.log('WebSocket encryption disabled');
+			this.adapterLogger.log('WebSocket encryption disabled');
 			return server;
 		}
 
-		this.logger.log('WebSocket encryption enabled');
+		this.adapterLogger.log('WebSocket encryption enabled');
 		server.use((socket: Socket, next) => {
 			this.setupEncryptionMiddleware(socket);
 			next();
@@ -52,7 +52,7 @@ export class WsEncryptionAdapter extends IoAdapter {
 
 					return listener(...args);
 				} catch (error) {
-					this.logger.error(
+					this.adapterLogger.error(
 						`Failed to decrypt WebSocket event '${event}': ${error.message}`
 					);
 					socket.emit('error', { event, message: 'Failed to decrypt message' });
@@ -73,7 +73,7 @@ export class WsEncryptionAdapter extends IoAdapter {
 				const encryptedResponse = this.encryptionService.encryptResponse(data);
 				return originalEmit(event, encryptedResponse, ...rest);
 			} catch (error) {
-				this.logger.error(
+				this.adapterLogger.error(
 					`Failed to encrypt WebSocket event '${event}': ${error.message}`
 				);
 				return originalEmit(event, ...args);
