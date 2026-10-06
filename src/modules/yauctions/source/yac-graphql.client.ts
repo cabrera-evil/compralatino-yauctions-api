@@ -25,8 +25,18 @@ const RETRYABLE_STATUS = (status: number): boolean =>
 const sleep = (ms: number): Promise<void> =>
 	new Promise((resolve) => setTimeout(resolve, ms));
 
-// Retry-After accepts seconds or an HTTP date; ratelimit-reset is seconds.
-const parseWaitMs = (
+const EPOCH_MS_THRESHOLD = 1e12;
+const EPOCH_SECONDS_THRESHOLD = 1e9;
+
+// ratelimit-reset may be epoch ms, epoch seconds or relative seconds.
+const resetToWaitMs = (value: number, now: number): number => {
+	if (value > EPOCH_MS_THRESHOLD) return Math.max(0, value - now);
+	if (value > EPOCH_SECONDS_THRESHOLD) return Math.max(0, value * 1000 - now);
+	return Math.max(0, value * 1000);
+};
+
+// Retry-After accepts seconds or an HTTP date.
+export const parseWaitMs = (
 	headers: Headers,
 	now = Date.now()
 ): number | undefined => {
@@ -37,16 +47,16 @@ const parseWaitMs = (
 		const date = Date.parse(retryAfter);
 		if (!Number.isNaN(date)) return Math.max(0, date - now);
 	}
-	const reset = Number(headers.get('ratelimit-reset'));
-	return headers.has('ratelimit-reset') && Number.isFinite(reset)
-		? Math.max(0, reset * 1000)
-		: undefined;
+	const resetHeader = headers.get('ratelimit-reset');
+	const reset = resetHeader?.trim() ? Number(resetHeader) : Number.NaN;
+	return Number.isFinite(reset) ? resetToWaitMs(reset, now) : undefined;
 };
 
 @Injectable()
 export class YacGraphqlClient {
 	private readonly logger = new Logger(YacGraphqlClient.name);
 	private lastRequestAt = 0;
+	private turn: Promise<void> = Promise.resolve();
 	private requests = 0;
 
 	constructor(private readonly settings: YacApiSettings) {}
@@ -82,7 +92,9 @@ export class YacGraphqlClient {
 	): Promise<T> {
 		const { maxAttempts, backoffBaseMs, maxRetryWaitMs } = this.settings;
 		for (let attempt = 1; ; attempt++) {
+			this.assertWithinCap();
 			await this.waitForTurn();
+			this.assertWithinCap();
 			const outcome = await this.send<T>(query, variables);
 			if (outcome.kind === 'ok') return outcome.data;
 			if (!outcome.retryable) throw outcome.error;
@@ -103,10 +115,24 @@ export class YacGraphqlClient {
 		}
 	}
 
-	private async waitForTurn(): Promise<void> {
-		const wait = this.lastRequestAt + this.settings.minIntervalMs - Date.now();
-		if (wait > 0) await sleep(wait);
-		this.lastRequestAt = Date.now();
+	private assertWithinCap(): void {
+		const { maxRequestsPerRun } = this.settings;
+		if (this.requests >= maxRequestsPerRun)
+			throw new YacRateLimitedError(
+				`Request cap of ${maxRequestsPerRun} per run reached; aborting`
+			);
+	}
+
+	// Promise-chain mutex: concurrent callers are paced one after another.
+	private waitForTurn(): Promise<void> {
+		const next = this.turn.then(async () => {
+			const wait =
+				this.lastRequestAt + this.settings.minIntervalMs - Date.now();
+			if (wait > 0) await sleep(wait);
+			this.lastRequestAt = Date.now();
+		});
+		this.turn = next;
+		return next;
 	}
 
 	private async send<T>(

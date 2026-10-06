@@ -24,7 +24,10 @@ export class YacCategoryCodes {
 				0,
 				MAX_CODE_LENGTH - 24
 			) || 'category';
-		const code = this.used.has(slug) ? `${slug}-${sourceCategoryId}` : slug;
+		const suffix = `-${sourceCategoryId}`;
+		const code = this.used.has(slug)
+			? `${slug.slice(0, Math.max(1, MAX_CODE_LENGTH - suffix.length))}${suffix}`
+			: slug;
 		this.bySourceId.set(sourceCategoryId, code);
 		this.used.add(code);
 		return code;

@@ -14,7 +14,7 @@ query Auctions {
     total
     auctions {
       auction_id auction_ref title type start_time end_time public_url front_visible_lot_count auction_status
-      auction_location { line_1 city state_name zip_code country_id }
+      auction_location { city state_name }
     }
   }
 }`;
@@ -35,7 +35,7 @@ query AuctionLots($auction_id: String!, $pagination: Pagination) {
         auction_lot_id auction_id lot_number title description start_time end_time
         bid_count bid_increment_amount required_bid starting_bid winning_bid_amount
         same_as_auction_location
-        lot_location { line_1 city state_name }
+        lot_location { city state_name }
         is_past_end_time is_passed is_no_sale
         category_id category { category_id name paths { category_id name } }
         primary_image dynamic_fields { label type dynamic_field_id data options }

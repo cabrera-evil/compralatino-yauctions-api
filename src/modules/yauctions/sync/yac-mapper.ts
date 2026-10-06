@@ -13,7 +13,13 @@ import type {
 import type { YacPhoto, YacSpec } from '../types/yac-json.type';
 import type { YacCategoryCodes } from './yac-category-codes';
 import type { MapLotResult, MappedAuction } from './yac-mapper.types';
-import { convertAmount, type FxRates, toDecimal } from './yac-money';
+import {
+	convertAmount,
+	fitsConverted,
+	fitsSourceAmount,
+	type FxRates,
+	toDecimal,
+} from './yac-money';
 
 export const YAC_CODE_PREFIX = 'yac-';
 
@@ -95,9 +101,21 @@ export const mapSpecs = (fields?: YacRawDynamicField[] | null): YacSpec[] =>
 		}))
 		.filter((spec) => spec.label && spec.value);
 
+const ASSET_PATH = '/asset/';
+
+export const isSafeImageUrl = (url?: string | null): url is string => {
+	if (!url || url.includes(ASSET_PATH)) return false;
+	try {
+		return new URL(url).protocol === 'https:';
+	} catch {
+		return false;
+	}
+};
+
 export const primaryImageUrl = (
 	image?: YacRawPrimaryImage | null
-): string | null => image?.large ?? image?.url ?? image?.medium ?? null;
+): string | null =>
+	[image?.large, image?.url, image?.medium].find(isSafeImageUrl) ?? null;
 
 export const mapPrimaryPhoto = (
 	lotId: string,
@@ -128,8 +146,9 @@ export const mapLot = (
 	const startsAt = parseDate(raw.start_time);
 	const endsAt = parseDate(raw.end_time);
 	if (!startsAt || !endsAt) return { skipped: 'invalid-dates' };
+	const winning = toDecimal(raw.winning_bid_amount);
 	const current =
-		toDecimal(raw.winning_bid_amount) ??
+		(winning?.isZero() ? null : winning) ??
 		toDecimal(raw.starting_bid) ??
 		toDecimal(raw.required_bid);
 	if (!current) return { skipped: 'no-price' };
@@ -137,8 +156,12 @@ export const mapLot = (
 
 	const sourceLotId = String(raw.auction_lot_id);
 	const sourceCategoryId = String(category.category_id);
+	if (!fitsSourceAmount(current) || !fitsSourceAmount(increment))
+		return { skipped: 'invalid-amount' };
 	const bid = convertAmount(current, ctx.rates);
 	const step = convertAmount(increment, ctx.rates);
+	if (!fitsConverted(bid) || !fitsConverted(step))
+		return { skipped: 'invalid-amount' };
 	const label = category.name.trim().slice(0, 255);
 	const location =
 		(!raw.same_as_auction_location && formatLocation(raw.lot_location)) ||

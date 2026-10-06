@@ -89,16 +89,25 @@ export class YauctionsSyncService {
 				: [];
 			const result = await new YacCollector(client, settings).collect(
 				{
-					maxAuctions: options.maxAuctions ?? this.config.bounds.maxAuctions,
-					maxLotsPerAuction:
-						options.maxLots ?? this.config.bounds.maxLotsPerAuction,
+					maxAuctions: Math.min(
+						options.maxAuctions ?? Infinity,
+						this.config.bounds.maxAuctions
+					),
+					maxLotsPerAuction: Math.min(
+						options.maxLots ?? Infinity,
+						this.config.bounds.maxLotsPerAuction
+					),
 					lotsPageSize: this.config.bounds.lotsPageSize,
 					enrichDetails: this.config.enrichDetails,
 				},
 				new YacCategoryCodes(existing)
 			);
 			const persisted = options.apply
-				? await this.repository.persist(result, startedAt)
+				? await this.repository.persist(
+						result,
+						startedAt,
+						this.config.bounds.maxEndRatio
+					)
 				: undefined;
 			const report: YacSyncReport = {
 				mode: options.apply ? 'apply' : 'dry-run',

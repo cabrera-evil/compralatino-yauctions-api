@@ -1,11 +1,8 @@
 export type YacAmount = number | string | null;
 
 export type YacLocation = {
-	line_1?: string | null;
 	city?: string | null;
 	state_name?: string | null;
-	zip_code?: string | null;
-	country_id?: string | null;
 };
 
 export type YacRawAuction = {

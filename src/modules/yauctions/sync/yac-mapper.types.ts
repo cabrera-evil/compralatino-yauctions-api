@@ -49,6 +49,7 @@ export type SkipReason =
 	| 'not-open'
 	| 'no-category'
 	| 'no-price'
-	| 'invalid-dates';
+	| 'invalid-dates'
+	| 'invalid-amount';
 
 export type MapLotResult = { lot: MappedLot } | { skipped: SkipReason };

@@ -4,6 +4,8 @@ import type { YacAmount } from '../source/yac-source.types';
 const { Decimal } = Prisma;
 
 export const USD_DECIMALS = 2;
+const MONEY_INTEGER_LIMIT = new Decimal(10).pow(12);
+const JPY_INTEGER_LIMIT = new Decimal(10).pow(16);
 export const JPY_DECIMALS = 0;
 
 export type ConvertedAmount = {
@@ -23,6 +25,14 @@ export const toDecimal = (
 		return null;
 	}
 };
+
+// Raw source amounts must fit DECIMAL(14,2) exactly; they are never rounded to fit.
+export const fitsSourceAmount = (value: Prisma.Decimal): boolean =>
+	value.decimalPlaces() <= 2 && value.lt(MONEY_INTEGER_LIMIT);
+
+// Converted amounts must fit DECIMAL(14,2) (USD) and DECIMAL(16,0) (JPY).
+export const fitsConverted = (amount: ConvertedAmount): boolean =>
+	amount.usd.lt(MONEY_INTEGER_LIMIT) && amount.jpy.lt(JPY_INTEGER_LIMIT);
 
 export type FxRates = { sourceToUsd: Prisma.Decimal; usdToJpy: Prisma.Decimal };
 

@@ -2,8 +2,15 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from 'prisma/generated/client';
 
-const resolveSchema = (url?: string): string | undefined =>
-	url ? (new URL(url).searchParams.get('schema') ?? undefined) : undefined;
+// A malformed URL yields no schema; the connect-time failure reports it.
+const resolveSchema = (url?: string): string | undefined => {
+	if (!url) return undefined;
+	try {
+		return new URL(url).searchParams.get('schema') ?? undefined;
+	} catch {
+		return undefined;
+	}
+};
 
 export const adapter = new PrismaPg(
 	{ connectionString: process.env.DATABASE_URL },

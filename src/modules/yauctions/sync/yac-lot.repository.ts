@@ -3,12 +3,14 @@ import type { CollectResult } from './yac-collector';
 import type { MappedLot } from './yac-mapper.types';
 
 const UPSERT_CHUNK = 100;
+const MIN_OPEN_LOTS_FOR_RATIO_GUARD = 20;
 
 export type PersistSummary = {
 	categories: number;
 	auctions: number;
 	lotsUpserted: number;
 	lotsEnded: number;
+	endingSkipped?: 'end-ratio-exceeded';
 };
 
 const lotData = (
@@ -56,8 +58,12 @@ export class YacLotRepository {
 
 	async persist(
 		result: CollectResult,
-		runStartedAt: Date
+		runStartedAt: Date,
+		maxEndRatio: number
 	): Promise<PersistSummary> {
+		const openBefore = await this.prisma.yacLot.count({
+			where: { status: 'open' },
+		});
 		const categoryIds = new Map<string, number>();
 		for (const category of result.categories) {
 			const saved = await this.prisma.yacCategory.upsert({
@@ -101,38 +107,53 @@ export class YacLotRepository {
 			);
 		}
 
+		const ended = await this.markEnded(
+			result,
+			runStartedAt,
+			openBefore,
+			maxEndRatio
+		);
 		return {
 			categories: categoryIds.size,
 			auctions: auctionIds.size,
 			lotsUpserted: lots.length,
-			lotsEnded: await this.markEnded(result, runStartedAt),
+			lotsEnded: ended.count,
+			...(ended.skipped && { endingSkipped: ended.skipped }),
 		};
 	}
 
 	// Only lots of fully read auctions, or of auctions no longer listed, can be declared ended.
 	private async markEnded(
 		result: CollectResult,
-		runStartedAt: Date
-	): Promise<number> {
+		runStartedAt: Date,
+		openBefore: number,
+		maxEndRatio: number
+	): Promise<{ count: number; skipped?: 'end-ratio-exceeded' }> {
 		const completeIds = result.auctions
 			.filter((a) => a.complete)
 			.map((a) => a.auction.sourceAuctionId);
 		const scopes: Prisma.YacLotWhereInput[] = [];
 		if (completeIds.length)
 			scopes.push({ auction: { sourceAuctionId: { in: completeIds } } });
-		if (result.auctionListComplete)
+		if (result.auctionListComplete && result.listedAuctionIds.length)
 			scopes.push({
 				auction: { sourceAuctionId: { notIn: result.listedAuctionIds } },
 			});
-		if (!scopes.length) return 0;
+		if (!scopes.length) return { count: 0 };
+		const where: Prisma.YacLotWhereInput = {
+			status: 'open',
+			lastSeenAt: { lt: runStartedAt },
+			OR: scopes,
+		};
+		if (openBefore >= MIN_OPEN_LOTS_FOR_RATIO_GUARD) {
+			const candidates = await this.prisma.yacLot.count({ where });
+			if (candidates / openBefore > maxEndRatio)
+				return { count: 0, skipped: 'end-ratio-exceeded' };
+		}
 		const { count } = await this.prisma.yacLot.updateMany({
-			where: {
-				status: 'open',
-				lastSeenAt: { lt: runStartedAt },
-				OR: scopes,
-			},
+			where,
 			data: { status: 'ended', endedAt: runStartedAt },
 		});
-		return count;
+		return { count };
 	}
 }

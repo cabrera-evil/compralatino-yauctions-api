@@ -5,7 +5,12 @@ import type { YacGraphqlClient } from '../source/yac-graphql.client';
 import type { YacRawDetailImage, YacRawLot } from '../source/yac-source.types';
 import type { YacPhoto } from '../types/yac-json.type';
 import type { YacCategoryCodes } from './yac-category-codes';
-import { type MapContext, mapAuction, mapLot } from './yac-mapper';
+import {
+	type MapContext,
+	isSafeImageUrl,
+	mapAuction,
+	mapLot,
+} from './yac-mapper';
 import type {
 	MappedAuction,
 	MappedCategory,
@@ -13,8 +18,6 @@ import type {
 	SkipReason,
 } from './yac-mapper.types';
 import { parseRates } from './yac-money';
-
-const ASSET_PATH = '/asset/';
 
 export type YacCollectOptions = {
 	maxAuctions: number;
@@ -45,8 +48,8 @@ const detailPhotos = (
 	images?: YacRawDetailImage[] | null
 ): YacPhoto[] =>
 	(images ?? []).flatMap((image, index) => {
-		const urls = (image.cached_assets ?? []).filter(
-			(asset) => asset.url && !asset.url.includes(ASSET_PATH)
+		const urls = (image.cached_assets ?? []).filter((asset) =>
+			isSafeImageUrl(asset.url)
 		);
 		const url = (urls.find((a) => a.variant === 'large') ?? urls[0])?.url;
 		return url
@@ -84,7 +87,10 @@ export class YacCollector {
 		const result: CollectResult = {
 			auctions: [],
 			listedAuctionIds: listing.auctions.map((a) => String(a.auction_id)),
-			auctionListComplete: listing.total <= listing.auctions.length,
+			auctionListComplete:
+				listing.auctions.length > 0 &&
+				listing.total > 0 &&
+				listing.total <= listing.auctions.length,
 			categories: [],
 			lotsFetched: 0,
 			skipped: {
@@ -92,6 +98,7 @@ export class YacCollector {
 				'no-category': 0,
 				'no-price': 0,
 				'invalid-dates': 0,
+				'invalid-amount': 0,
 			},
 		};
 		const seenCategories = new Map<string, MappedCategory>();

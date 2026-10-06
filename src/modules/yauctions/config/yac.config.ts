@@ -16,12 +16,14 @@ export type YacApiSettings = {
 	maxAttempts: number;
 	backoffBaseMs: number;
 	maxRetryWaitMs: number;
+	maxRequestsPerRun: number;
 };
 
 export type YacBounds = {
 	maxAuctions: number;
 	maxLotsPerAuction: number;
 	lotsPageSize: number;
+	maxEndRatio: number;
 };
 
 export type YacSyncSettings = {
@@ -49,6 +51,10 @@ const readPackageVersion = (): string => {
 };
 
 const decimal = () => Joi.string().pattern(DECIMAL_PATTERN);
+const positiveDecimal = () =>
+	decimal().custom((value: string, helpers) =>
+		Number(value) > 0 ? value : helpers.error('any.invalid')
+	);
 
 const BaseEnvSchema = Joi.object({
 	YAC_API_URL: Joi.string().uri({ scheme: ['http', 'https'] }),
@@ -58,30 +64,42 @@ const BaseEnvSchema = Joi.object({
 	YAC_MAX_ATTEMPTS: Joi.number().integer().min(1).max(10).default(3),
 	YAC_BACKOFF_BASE_MS: Joi.number().integer().min(0).default(2000),
 	YAC_MAX_RETRY_WAIT_MS: Joi.number().integer().min(0).default(60000),
-	YAC_MAX_AUCTIONS: Joi.number().integer().min(1).default(5),
-	YAC_MAX_LOTS_PER_AUCTION: Joi.number().integer().min(1).default(500),
+	YAC_MAX_REQUESTS_PER_RUN: Joi.number().integer().min(1).default(200),
+	YAC_MAX_END_RATIO: Joi.number().min(0).max(1).default(0.5),
+	YAC_MAX_AUCTIONS: Joi.number().integer().min(1).max(50).default(5),
+	YAC_MAX_LOTS_PER_AUCTION: Joi.number()
+		.integer()
+		.min(1)
+		.max(2000)
+		.default(500),
 	YAC_LOTS_PAGE_SIZE: Joi.number().integer().min(1).max(500).default(100),
 	YAC_ENRICH_DETAILS: Joi.boolean().default(false),
 	SCRAPER_ENABLED: Joi.boolean().default(false),
 	SCRAPER_INTERVAL_MS: Joi.number().integer().min(60000).default(21600000),
 	YAC_SOURCE_CURRENCY: Joi.string().length(3).uppercase(),
-	YAC_FX_SOURCE_TO_USD: decimal(),
-	YAC_FX_USD_TO_JPY: decimal(),
+	YAC_FX_SOURCE_TO_USD: positiveDecimal(),
+	YAC_FX_USD_TO_JPY: positiveDecimal(),
 	YAC_FX_AS_OF: Joi.date().iso(),
 	YAC_SELLER_NAME: Joi.string().max(255),
 }).unknown(true);
 
 const SyncEnvSchema = Joi.object({
 	YAC_SOURCE_CURRENCY: Joi.string().length(3).uppercase().required(),
-	YAC_FX_SOURCE_TO_USD: decimal().required(),
-	YAC_FX_USD_TO_JPY: decimal().required(),
+	YAC_FX_SOURCE_TO_USD: positiveDecimal().required(),
+	YAC_FX_USD_TO_JPY: positiveDecimal().required(),
 	YAC_FX_AS_OF: Joi.date().iso().required(),
 	YAC_SELLER_NAME: Joi.string().max(255).required(),
 }).unknown(true);
 
 const validate = <T>(schema: Joi.ObjectSchema, env: NodeJS.ProcessEnv): T => {
 	const { error, value } = schema.validate(env, { abortEarly: false });
-	if (error) throw new Error(`Invalid YAC configuration: ${error.message}`);
+	if (error) {
+		// Joi messages echo offending values; report only key names and rule types.
+		const issues = error.details
+			.map((d) => `${d.path.join('.') || 'env'} (${d.type})`)
+			.join(', ');
+		throw new Error(`Invalid YAC configuration: ${issues}`);
+	}
 	return value as T;
 };
 
@@ -93,6 +111,8 @@ type BaseEnv = {
 	YAC_MAX_ATTEMPTS: number;
 	YAC_BACKOFF_BASE_MS: number;
 	YAC_MAX_RETRY_WAIT_MS: number;
+	YAC_MAX_REQUESTS_PER_RUN: number;
+	YAC_MAX_END_RATIO: number;
 	YAC_MAX_AUCTIONS: number;
 	YAC_MAX_LOTS_PER_AUCTION: number;
 	YAC_LOTS_PAGE_SIZE: number;
@@ -132,11 +152,13 @@ export const loadYacConfig = (
 			maxAttempts: v.YAC_MAX_ATTEMPTS,
 			backoffBaseMs: v.YAC_BACKOFF_BASE_MS,
 			maxRetryWaitMs: v.YAC_MAX_RETRY_WAIT_MS,
+			maxRequestsPerRun: v.YAC_MAX_REQUESTS_PER_RUN,
 		},
 		bounds: {
 			maxAuctions: v.YAC_MAX_AUCTIONS,
 			maxLotsPerAuction: v.YAC_MAX_LOTS_PER_AUCTION,
 			lotsPageSize: v.YAC_LOTS_PAGE_SIZE,
+			maxEndRatio: v.YAC_MAX_END_RATIO,
 		},
 		enrichDetails: v.YAC_ENRICH_DETAILS,
 		scraper: { enabled: v.SCRAPER_ENABLED, intervalMs: v.SCRAPER_INTERVAL_MS },
