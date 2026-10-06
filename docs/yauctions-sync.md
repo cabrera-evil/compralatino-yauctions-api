@@ -26,8 +26,8 @@ The read API boots without any of them. Sync-only variables are validated (Joi) 
 | Variable                      | Default                                                | Purpose                                                                                                |
 | ----------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | `YAC_SOURCE_CURRENCY`         | none, required for sync                                | ISO code of the source `$` amounts (stored with each lot)                                              |
-| `YAC_FX_SOURCE_TO_USD`        | none, required for sync                                | Decimal rate: 1 source unit in USD                                                                     |
-| `YAC_FX_USD_TO_JPY`           | none, required for sync                                | Decimal rate: 1 USD in JPY                                                                             |
+| `YAC_FX_SOURCE_TO_USD`        | none, required for sync                                | Decimal rate > 0: 1 source unit in USD                                                                 |
+| `YAC_FX_USD_TO_JPY`           | none, required for sync                                | Decimal rate > 0: 1 USD in JPY                                                                         |
 | `YAC_FX_AS_OF`                | none, required for sync                                | ISO timestamp of the rates; exposed as `exchangedAt`                                                   |
 | `YAC_SELLER_NAME`             | none, required for sync                                | `seller.name` (the auction house; consignor data is personal and never stored)                         |
 | `YAC_API_URL`                 | `https://www.yacauctions.com/api`                      | GraphQL endpoint                                                                                       |
@@ -37,8 +37,10 @@ The read API boots without any of them. Sync-only variables are validated (Joi) 
 | `YAC_MAX_ATTEMPTS`            | `3`                                                    | Attempts per request on 429/5xx/network errors                                                         |
 | `YAC_BACKOFF_BASE_MS`         | `2000`                                                 | Exponential backoff base (doubles each retry)                                                          |
 | `YAC_MAX_RETRY_WAIT_MS`       | `60000`                                                | Abort the run if a retry would wait longer (including `Retry-After` / `ratelimit-reset`)               |
-| `YAC_MAX_AUCTIONS`            | `5`                                                    | Auctions read per run (earliest ending first)                                                          |
-| `YAC_MAX_LOTS_PER_AUCTION`    | `500`                                                  | Lots read per auction                                                                                  |
+| `YAC_MAX_AUCTIONS`            | `5` (max `50`)                                         | Auctions read per run (earliest ending first)                                                          |
+| `YAC_MAX_LOTS_PER_AUCTION`    | `500` (max `2000`)                                     | Lots read per auction                                                                                  |
+| `YAC_MAX_REQUESTS_PER_RUN`    | `200`                                                  | Request cap per run (retries included); the run aborts safely when reached                             |
+| `YAC_MAX_END_RATIO`           | `0.5` (0 to 1)                                         | Skip ending lots when a run would end a larger fraction of the open lots (guard applies from 20 open)  |
 | `YAC_LOTS_PAGE_SIZE`          | `100`                                                  | Lots per request                                                                                       |
 | `YAC_ENRICH_DETAILS`          | `false`                                                | Also run the single-lot query per lot (one extra request per lot) for all photos and plain description |
 | `SCRAPER_ENABLED`             | `false`                                                | In-process interval sync                                                                               |
@@ -53,3 +55,13 @@ The read API boots without any of them. Sync-only variables are validated (Joi) 
 - Ended lots: lots missing from a later run are marked `ended` (never deleted) only when every page of their auction was read within the bounds, or when the auction is no longer listed and the auction list was complete. Aborted or bound-truncated runs mark nothing. Ended lots are not served.
 - Description HTML is reduced to plain-text paragraphs; specs come from dynamic fields resolved through `options.choices`, empty values skipped.
 - Unknown data is not invented: `conditionGrade` and `conditionSummary` are `''`, `seller.positiveRatePercent` is `0`, `shipping` only carries `pickupPoint` (lot or auction city and state).
+
+## Safeguards
+
+- `--max-auctions` and `--max-lots` can only lower the env bounds (`min(cli, env)`).
+- Public endpoints serve a lot only while `status = open` and `endsAt` is in the future, so expired lots disappear before the next sync.
+- An empty or `total: 0` auction listing never triggers the "no longer listed" ending, and a run that would end more than `YAC_MAX_END_RATIO` of the open lots (when at least 20 are open) ends none and reports `persisted.endingSkipped: "end-ratio-exceeded"`.
+- Request pacing is serialized; `ratelimit-reset` is read as epoch ms (> 1e12), epoch seconds (> 1e9) or relative seconds. Waits above `YAC_MAX_RETRY_WAIT_MS` abort the run.
+- Lots whose raw amount has more than 2 decimals or overflows `DECIMAL(14,2)` (or whose converted value overflows) are skipped and counted as `skipped.invalid-amount`; a `winning_bid_amount` of 0 counts as absent.
+- Only `city` and `state_name` of auction and lot locations are requested. Config errors report key names and rule types, never values.
+- Known limitation: there is no advisory lock or multi-replica coordination. Do not run `--apply` while the scheduler (`SCRAPER_ENABLED=true`) is active or on several instances.
