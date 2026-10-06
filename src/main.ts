@@ -1,10 +1,11 @@
 import { WsEncryptionAdapter } from '@/adapters/ws-encryption.adapter';
 import { setupSwaggerDoc } from '@/config/swagger.config';
+import { RABBITMQ_EXCHANGE_TYPE } from '@/constants/rabbitmq';
 import { HttpExceptionsFilter } from '@/filters/http-exceptions.filter';
 import { EncryptionService } from '@/modules/encryption/encryption.service';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
@@ -29,6 +30,22 @@ async function bootstrap() {
 			},
 		});
 
+	// Conditionally connect RabbitMQ microservice (inter-service pub/sub)
+	const rabbitMqEnabled = process.env.RABBITMQ_ENABLED === 'true';
+	if (rabbitMqEnabled)
+		app.connectMicroservice<MicroserviceOptions>({
+			transport: Transport.RMQ,
+			options: {
+				urls: [process.env.RABBITMQ_URL],
+				queue: process.env.RABBITMQ_QUEUE,
+				exchange: process.env.RABBITMQ_EXCHANGE,
+				exchangeType: RABBITMQ_EXCHANGE_TYPE,
+				wildcards: true,
+				queueOptions: { durable: true },
+				noAck: false,
+			},
+		});
+
 	const { httpAdapter } = app.get(HttpAdapterHost);
 	app.useGlobalFilters(new HttpExceptionsFilter(httpAdapter));
 	app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -44,8 +61,8 @@ async function bootstrap() {
 	});
 	setupSwaggerDoc(app);
 
-	// Start microservices if TCP is enabled
-	if (tcpEnabled) await app.startAllMicroservices();
+	// Start microservices if any transport is enabled
+	if (tcpEnabled || rabbitMqEnabled) await app.startAllMicroservices();
 
 	await app.listen(process.env.PORT ?? 3000);
 }

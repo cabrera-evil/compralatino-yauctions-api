@@ -1,0 +1,2 @@
+export const RABBITMQ_SERVICE = 'RABBITMQ_SERVICE';
+export const RABBITMQ_EXCHANGE_TYPE = 'topic';

@@ -6,6 +6,7 @@ import { CronConfig } from './cron.config';
 import { EnvironmentConfig } from './enviroment.config';
 import { JwtConfig } from './jwt.config';
 import { MailConfig } from './mail.config';
+import { RabbitMqConfig } from './rabbitmq.config';
 import { ThrottlerConfig } from './throttler.config';
 
 @Module({
@@ -15,8 +16,10 @@ import { ThrottlerConfig } from './throttler.config';
 		CronConfig,
 		EnvironmentConfig,
 		MailConfig,
+		RabbitMqConfig,
 		ThrottlerConfig,
 		JwtModule.registerAsync(JwtConfig),
 	],
+	exports: [RabbitMqConfig],
 })
 export class AppConfig {}

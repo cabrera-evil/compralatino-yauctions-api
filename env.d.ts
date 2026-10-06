@@ -11,6 +11,11 @@ declare namespace NodeJS {
 		TCP_RETRY_ATTEMPTS?: string;
 		TCP_RETRY_DELAY?: string;
 
+		RABBITMQ_ENABLED?: 'true' | 'false';
+		RABBITMQ_URL?: string;
+		RABBITMQ_EXCHANGE?: string;
+		RABBITMQ_QUEUE?: string;
+
 		JWT_SECRET: string;
 		REFRESH_TOKEN_SECRET: string;
 		API_KEYS: string;

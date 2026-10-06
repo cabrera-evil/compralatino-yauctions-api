@@ -18,6 +18,25 @@ export const EnvironmentSchema = Joi.object({
 	TCP_RETRY_ATTEMPTS: Joi.number().integer().min(0).default(5),
 	TCP_RETRY_DELAY: Joi.number().integer().min(0).default(2000),
 
+	RABBITMQ_ENABLED: Joi.boolean().default(false),
+	RABBITMQ_URL: Joi.string()
+		.uri({ scheme: ['amqp', 'amqps'] })
+		.when('RABBITMQ_ENABLED', {
+			is: true,
+			then: Joi.required(),
+			otherwise: Joi.optional(),
+		}),
+	RABBITMQ_EXCHANGE: Joi.string().when('RABBITMQ_ENABLED', {
+		is: true,
+		then: Joi.required(),
+		otherwise: Joi.optional(),
+	}),
+	RABBITMQ_QUEUE: Joi.string().when('RABBITMQ_ENABLED', {
+		is: true,
+		then: Joi.required(),
+		otherwise: Joi.optional(),
+	}),
+
 	CORS_ORIGIN: Joi.string().optional(),
 
 	JWT_SECRET: Joi.string().required(),
