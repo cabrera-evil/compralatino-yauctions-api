@@ -2,9 +2,13 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from 'prisma/generated/client';
 
-export const adapter = new PrismaPg({
-	connectionString: process.env.DATABASE_URL,
-});
+const resolveSchema = (url?: string): string | undefined =>
+	url ? (new URL(url).searchParams.get('schema') ?? undefined) : undefined;
+
+export const adapter = new PrismaPg(
+	{ connectionString: process.env.DATABASE_URL },
+	{ schema: resolveSchema(process.env.DATABASE_URL) }
+);
 
 export const PrismaProvider = {
 	provide: PrismaClient,

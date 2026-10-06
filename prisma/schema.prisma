@@ -33,3 +33,92 @@ model YauctionsReference {
   @@index([orderId])
   @@map("yauctions_references")
 }
+
+enum YacLotStatus {
+  open
+  ended
+
+  @@map("yac_lot_status")
+}
+
+// Source categories of yacauctions.com; code is the stable slug of the source name.
+model YacCategory {
+  id               Int      @id @default(autoincrement())
+  sourceCategoryId String   @unique @map("source_category_id") @db.VarChar(64)
+  code             String   @unique @db.VarChar(96)
+  label            String   @db.VarChar(255)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  lots             YacLot[]
+
+  @@map("yac_categories")
+}
+
+// Public auction metadata only; no consignor or bidder personal data is stored.
+model YacAuction {
+  id              Int       @id @default(autoincrement())
+  sourceAuctionId String    @unique @map("source_auction_id") @db.VarChar(64)
+  reference       String?   @db.VarChar(128)
+  title           String    @db.VarChar(255)
+  type            String?   @db.VarChar(32)
+  location        String    @db.VarChar(255)
+  startsAt        DateTime? @map("starts_at")
+  endsAt          DateTime? @map("ends_at")
+  lastSeenAt      DateTime  @map("last_seen_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  lots            YacLot[]
+
+  @@map("yac_auctions")
+}
+
+// Lot snapshot: raw source amounts plus USD/JPY converted with env-provided rates.
+// code is the public product id (yac-<auction_lot_id>).
+model YacLot {
+  id                    Int          @id @default(autoincrement())
+  sourceLotId           String       @unique @map("source_lot_id") @db.VarChar(64)
+  code                  String       @unique @db.VarChar(96)
+  auctionId             Int          @map("auction_id")
+  auction               YacAuction   @relation(fields: [auctionId], references: [id])
+  categoryId            Int          @map("category_id")
+  category              YacCategory  @relation(fields: [categoryId], references: [id])
+  lotNumber             String?      @map("lot_number") @db.VarChar(64)
+  title                 String       @db.VarChar(512)
+  status                YacLotStatus @default(open)
+  sourceCurrency        String       @map("source_currency") @db.VarChar(3)
+  sourceCurrentBid      Decimal      @map("source_current_bid") @db.Decimal(14, 2)
+  sourceMinIncrement    Decimal      @map("source_min_increment") @db.Decimal(14, 2)
+  priceUsd              Decimal      @map("price_usd") @db.Decimal(14, 2)
+  currentBidJpy         Decimal      @map("current_bid_jpy") @db.Decimal(16, 0)
+  minIncrementUsd       Decimal      @map("min_increment_usd") @db.Decimal(14, 2)
+  minIncrementJpy       Decimal      @map("min_increment_jpy") @db.Decimal(16, 0)
+  exchangedAt           DateTime     @map("exchanged_at")
+  bids                  Int          @default(0)
+  startsAt              DateTime     @map("starts_at")
+  endsAt                DateTime     @map("ends_at")
+  location              String       @db.VarChar(255)
+  sellerName            String       @map("seller_name") @db.VarChar(255)
+  imageUrl              String?      @map("image_url") @db.Text
+  searchText            String       @map("search_text") @db.Text
+  /// [YacLotPhotos]
+  photos                Json
+  /// [YacLotDescription]
+  descriptionParagraphs Json         @map("description_paragraphs")
+  /// [YacLotSpecs]
+  specs                 Json
+  /// [YacLotShipping]
+  shipping              Json
+  lastSeenAt            DateTime     @map("last_seen_at")
+  endedAt               DateTime?    @map("ended_at")
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  @@index([auctionId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([endsAt])
+  @@index([startsAt])
+  @@index([priceUsd])
+  @@index([status, lastSeenAt])
+  @@map("yac_lots")
+}
