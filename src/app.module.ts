@@ -11,6 +11,7 @@ import { EncryptionModule } from './modules/encryption/encryption.module';
 import { HealthModule } from './modules/health/health.module';
 import { PdfModule } from './modules/pdf/pdf.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
+import { YauctionsModule } from './modules/yauctions/yauctions.module';
 
 @Module({
 	imports: [
@@ -20,6 +21,7 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 		HealthModule,
 		PdfModule,
 		PrismaModule,
+		YauctionsModule,
 	],
 	controllers: [AppController],
 	providers: [
