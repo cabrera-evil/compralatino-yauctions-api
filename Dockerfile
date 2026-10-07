@@ -45,6 +45,9 @@ RUN --mount=type=cache,target=/home/node/.local/share/pnpm,uid=1000,gid=1000 \
 # ==============================================================================
 FROM dependencies AS builder
 
+# Dev-only hooks (husky prepare) must not run in the image build: skip pnpm's pre-run auto install.
+ENV PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN=false
+
 # Set working directory
 WORKDIR /app
 
