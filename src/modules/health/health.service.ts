@@ -18,7 +18,9 @@ export class HealthService {
 			() =>
 				this.disk.checkStorage('storage', {
 					path: '/',
-					threshold: 250 * 1024 * 1024 * 1024,
+					thresholdPercent: Number(
+						process.env.HEALTH_DISK_THRESHOLD_PERCENT ?? 0.95
+					),
 				}),
 			() => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
 		]);
