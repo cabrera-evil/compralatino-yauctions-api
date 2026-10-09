@@ -11,6 +11,7 @@ import { EncryptionModule } from './modules/encryption/encryption.module';
 import { HealthModule } from './modules/health/health.module';
 import { PdfModule } from './modules/pdf/pdf.module';
 import { PrismaModule } from './modules/prisma/prisma.module';
+import { YauctionsRpcModule } from './modules/yauctions-rpc/yauctions-rpc.module';
 import { YauctionsModule } from './modules/yauctions/yauctions.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { YauctionsModule } from './modules/yauctions/yauctions.module';
 		PdfModule,
 		PrismaModule,
 		YauctionsModule,
+		YauctionsRpcModule,
 	],
 	controllers: [AppController],
 	providers: [

@@ -26,6 +26,6 @@ import { YauctionsSyncService } from './sync/yauctions-sync.service';
 			) => new YauctionsSyncService(config, new YacLotRepository(prisma)),
 		},
 	],
-	exports: [YauctionsSyncService],
+	exports: [YauctionsSyncService, ProductService, CategoryService],
 })
 export class YauctionsModule {}

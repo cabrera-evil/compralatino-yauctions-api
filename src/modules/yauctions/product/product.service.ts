@@ -66,4 +66,12 @@ export class ProductService {
 		if (!lot) throw new NotFoundException('Product not found');
 		return singleResponse(serializeProductDetail(lot));
 	}
+
+	/** Lots by code regardless of open/ended state; used by RPC validation. */
+	findLotsByCodes(codes: string[]) {
+		return this.prisma.yacLot.findMany({
+			where: { code: { in: codes } },
+			...lotWithCategory,
+		});
+	}
 }
