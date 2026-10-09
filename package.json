@@ -64,7 +64,7 @@
 		"crypto-js": "^4.2.0",
 		"date-fns": "^4.1.0",
 		"generate-password": "^1.7.1",
-		"handlebars": "^4.7.9",
+		"handlebars": "^4.7.10",
 		"ioredis": "^6.0.0",
 		"joi": "^18.2.9",
 		"lodash": "^4.18.1",
