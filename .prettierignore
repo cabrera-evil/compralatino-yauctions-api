@@ -26,3 +26,7 @@ pnpm-lock.yaml
 # Ignore Documentation files
 README.md
 CHANGELOG.md
+
+# Ignore local tooling output (git-ignored globally)
+.atl/
+.playwright-mcp/
