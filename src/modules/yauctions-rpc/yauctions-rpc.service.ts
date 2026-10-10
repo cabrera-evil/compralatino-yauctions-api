@@ -127,6 +127,8 @@ export class YauctionsRpcService {
 				jpy: lot.currentBidJpy.toString(),
 				exchangedAt: lot.exchangedAt?.toISOString() ?? null,
 			},
+			currentBidUsd: lot.priceUsd.toString(),
+			minIncrementUsd: lot.minIncrementUsd.toString(),
 			category: { code: lot.category.code, name: lot.category.label },
 		};
 	}

@@ -7,6 +7,8 @@ export type ValidatedLotItem = {
 	status?: string;
 	endsAt?: string;
 	price?: { usd: string; jpy: string; exchangedAt?: string | null };
+	currentBidUsd?: string;
+	minIncrementUsd?: string;
 	category: { code: string; name: string } | null;
 };
 
