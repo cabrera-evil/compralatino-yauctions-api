@@ -35,7 +35,7 @@ jobs:
     needs: [set_environment]
     uses: cabrera-evil/workflows/.github/workflows/deps-analysis.yaml@master
     with:
-      report: true
+      report: false
     secrets: inherit
 
   publish:
