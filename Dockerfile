@@ -24,6 +24,9 @@ RUN apt-get update && \
 RUN --mount=type=cache,target=/root/.npm \
   npm install -g pnpm@${PNPM_VERSION}
 
+# Fixed store path so the cache mounts work regardless of the running user
+ENV PNPM_STORE_DIR=/pnpm-store
+
 # ==============================================================================
 # Dependencies stage - Install and cache dependencies
 # ==============================================================================
@@ -36,8 +39,8 @@ WORKDIR /app
 COPY --chown=node:node package.json pnpm-lock.yaml ./
 
 # Create cache directory and install dependencies with caching
-RUN --mount=type=cache,target=/home/node/.local/share/pnpm,uid=1000,gid=1000 \
-  --mount=type=cache,target=/home/node/.cache/pnpm,uid=1000,gid=1000 \
+RUN --mount=type=cache,target=/pnpm-store \
+  --mount=type=cache,target=/root/.cache/pnpm \
   pnpm install --frozen-lockfile --ignore-scripts
 
 # ==============================================================================
@@ -55,11 +58,11 @@ WORKDIR /app
 COPY --chown=node:node . .
 
 # Generate Prisma client (engines/cache persisted across builds)
-RUN --mount=type=cache,target=/home/node/.cache,uid=1000,gid=1000 \
+RUN --mount=type=cache,target=/root/.cache \
   pnpm prisma generate
 
 # Build the application
-RUN --mount=type=cache,target=/home/node/.cache,uid=1000,gid=1000 \
+RUN --mount=type=cache,target=/root/.cache \
   pnpm build
 
 # ==============================================================================
@@ -77,8 +80,8 @@ COPY --chown=node:node package.json pnpm-lock.yaml ./
 COPY --from=dependencies --chown=node:node /app/node_modules ./node_modules/
 
 # Prune development dependencies with caching
-RUN --mount=type=cache,target=/home/node/.local/share/pnpm,uid=1000,gid=1000 \
-  --mount=type=cache,target=/home/node/.cache/pnpm,uid=1000,gid=1000 \
+RUN --mount=type=cache,target=/pnpm-store \
+  --mount=type=cache,target=/root/.cache/pnpm \
   pnpm prune --prod --ignore-scripts
 
 # ==============================================================================
