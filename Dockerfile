@@ -54,6 +54,10 @@ WORKDIR /app
 # Copy source code (use .dockerignore to exclude unnecessary files)
 COPY --chown=node:node . .
 
+# Generate Prisma client (engines/cache persisted across builds)
+RUN --mount=type=cache,target=/home/node/.cache,uid=1000,gid=1000 \
+  pnpm prisma generate
+
 # Build the application
 RUN --mount=type=cache,target=/home/node/.cache,uid=1000,gid=1000 \
   pnpm build
