@@ -12,7 +12,7 @@ export class HealthController {
 
 	@HealthCheck()
 	@SkipEncryption()
-	@SkipThrottle()
+	@SkipThrottle({ short: true, medium: true, long: true })
 	@Get()
 	check() {
 		return this.healthService.check();
