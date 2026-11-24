@@ -1,4 +1,4 @@
-import { MailerModule } from '@nestjs-modules/mailer';
+import { MailerModule, MailerOptions } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { Module } from '@nestjs/common';
 import * as path from 'path';
@@ -20,7 +20,7 @@ import * as path from 'path';
 				defaults: {
 					from: `No Reply <${process.env.SMTP_DEFAULT_FROM}>`,
 					replyTo: process.env.SMTP_DEFAULT_REPLY_TO,
-				},
+				} as MailerOptions['defaults'],
 				preview: process.env.NODE_ENV === 'development',
 				template: {
 					dir: path.resolve(__dirname, `../templates`),
