@@ -46,16 +46,9 @@ jobs:
       label: ${{ github.event.repository.name }}
     secrets: inherit
 
-  migrate:
-    name: Migrate
-    needs: [set_environment, publish]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-    uses: cabrera-evil/workflows/.github/workflows/prisma-migrate.yaml@master
-    secrets: inherit
-
   deploy:
     name: Deploy
-    needs: [set_environment, publish, migrate]
+    needs: [set_environment, publish]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     uses: cabrera-evil/workflows/.github/workflows/deploy-helm.yaml@master
     with:
