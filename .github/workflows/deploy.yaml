@@ -11,6 +11,7 @@ permissions:
   security-events: write
   actions: read
   contents: read
+  id-token: write
 
 jobs:
   set_environment:
@@ -57,6 +58,8 @@ jobs:
       namespace: ${{ needs.set_environment.outputs.namespace }}
       release_name: ${{ needs.set_environment.outputs.release_name }}
       chart: cabrera-evil/deploy-chart
+      tailscale: true
+      infisical: true
     secrets: inherit
 
   notify:
